@@ -1,6 +1,6 @@
 use crate::database::operations::*;
 use crate::database::transaction::CachedConnectorTransaction;
-use crate::Cache;
+use crate::ModelCache;
 use connector_interface::{
     self as connector, error::*, filter::Filter, Connection, QueryArguments, ReadOperations, RecordFilter, Transaction,
     WriteArgs, WriteOperations, IO,
@@ -11,7 +11,7 @@ use quaint::{connector::TransactionCapable, prelude::ConnectionInfo};
 use sql_query_connector::{QueryExt, SqlError};
 
 pub struct CachedConnection<'a, C> {
-    cache: &'a Cache,
+    cache: &'a ModelCache,
     inner: C,
     connection_info: &'a ConnectionInfo,
 }
@@ -20,7 +20,7 @@ impl<'a, C> CachedConnection<'a, C>
 where
     C: QueryExt + Send + Sync + 'static,
 {
-    pub fn new(cache: &'a Cache, inner: C, connection_info: &'a ConnectionInfo) -> Self {
+    pub fn new(cache: &'a ModelCache, inner: C, connection_info: &'a ConnectionInfo) -> Self {
         Self {
             cache,
             inner,

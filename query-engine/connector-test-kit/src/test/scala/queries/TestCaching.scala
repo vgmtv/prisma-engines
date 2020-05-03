@@ -44,19 +44,8 @@ class TestCaching extends FlatSpec with Matchers with ApiSpecBase {
 
     server.query(
       """
-        |mutation {
-        |  createTop(data: { id: 2, top_unique: "top2", middles: { create: { id: 2, middle_unique: "middle2", bottom: {create:{ id: 2, bottom_unique: "bottom2"}}} } }){
-        |    id
-        |  }
-        |}
-      """,
-      project
-    )
-
-    server.query(
-      """
-        |mutation {
-        |  createTop(data: { id: 3, top_unique: "top3", middles: { create: { id: 3, middle_unique: "middle3", bottom: {create:{ id: 3, bottom_unique: "bottom3"}}} } }){
+        |query {
+        |  top(where:{id:1}){
         |    id
         |  }
         |}
@@ -69,40 +58,73 @@ class TestCaching extends FlatSpec with Matchers with ApiSpecBase {
         |query {
         |  top(where:{id:1}){
         |    id
-        |    top_unique
-        |    middles{
-        |       id
-        |       middle_unique
-        |       bottom{
-        |         bottom_unique
-        |         id
-        |       }
-        |    }
         |  }
         |}
       """,
       project
     )
 
-    server.query(
-      """
-      |mutation {
-      |  updateTop(where:{id:1}, data:{middles:{create:{id: 11, middle_unique: "middle11" }}}){
-      |    id}
-      |}
-      """,
-      project
-    )
-
-    server.query(
-      """
-        |mutation {
-        |  updateTop(where:{id:1}, data:{middles:{update:{ where:{id: 1}, data:{ middle_unique: "middle1-updated"} }}}){
-        |    id}
-        |}
-      """,
-      project
-    )
+//    server.query(
+//      """
+//        |mutation {
+//        |  createTop(data: { id: 2, top_unique: "top2", middles: { create: { id: 2, middle_unique: "middle2", bottom: {create:{ id: 2, bottom_unique: "bottom2"}}} } }){
+//        |    id
+//        |  }
+//        |}
+//      """,
+//      project
+//    )
+//
+//    server.query(
+//      """
+//        |mutation {
+//        |  createTop(data: { id: 3, top_unique: "top3", middles: { create: { id: 3, middle_unique: "middle3", bottom: {create:{ id: 3, bottom_unique: "bottom3"}}} } }){
+//        |    id
+//        |  }
+//        |}
+//      """,
+//      project
+//    )
+//
+//    server.query(
+//      """
+//        |query {
+//        |  top(where:{id:1}){
+//        |    id
+//        |    top_unique
+//        |    middles{
+//        |       id
+//        |       middle_unique
+//        |       bottom{
+//        |         bottom_unique
+//        |         id
+//        |       }
+//        |    }
+//        |  }
+//        |}
+//      """,
+//      project
+//    )
+//
+//    server.query(
+//      """
+//      |mutation {
+//      |  updateTop(where:{id:1}, data:{middles:{create:{id: 11, middle_unique: "middle11" }}}){
+//      |    id}
+//      |}
+//      """,
+//      project
+//    )
+//
+//    server.query(
+//      """
+//        |mutation {
+//        |  updateTop(where:{id:1}, data:{middles:{update:{ where:{id: 1}, data:{ middle_unique: "middle1-updated"} }}}){
+//        |    id}
+//        |}
+//      """,
+//      project
+//    )
 
   }
 }

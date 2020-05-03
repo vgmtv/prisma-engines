@@ -1,5 +1,5 @@
 use crate::database::operations::*;
-use crate::Cache;
+use crate::ModelCache;
 use connector_interface::{
     self as connector, error::*, filter::Filter, QueryArguments, ReadOperations, RecordFilter, Transaction, WriteArgs,
     WriteOperations, IO,
@@ -10,14 +10,14 @@ use quaint::prelude::ConnectionInfo;
 use sql_query_connector::SqlError;
 
 pub struct CachedConnectorTransaction<'a> {
-    cache: &'a Cache,
+    cache: &'a ModelCache,
     inner: quaint::connector::Transaction<'a>,
     connection_info: &'a ConnectionInfo,
 }
 
 impl<'a> CachedConnectorTransaction<'a> {
     pub fn new<'b: 'a>(
-        cache: &'a Cache,
+        cache: &'a ModelCache,
         tx: quaint::connector::Transaction<'a>,
         connection_info: &'b ConnectionInfo,
     ) -> Self {

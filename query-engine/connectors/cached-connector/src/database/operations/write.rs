@@ -6,6 +6,8 @@ use sql_query_connector::QueryExt;
 /// Create a single record to the database defined in `conn`, resulting into a
 /// `RecordProjection` as an identifier pointing to the just-created record.
 pub async fn create_record(conn: &dyn QueryExt, model: &ModelRef, args: WriteArgs) -> crate::Result<RecordProjection> {
+    println!("WRITE");
+
     write::create_record(conn, model, args).await
 
     // update MODEL

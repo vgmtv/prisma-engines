@@ -1,21 +1,38 @@
+use crate::database::connection::CachedConnection;
 use async_trait::async_trait;
 use connector_interface::{Connection, Connector, IO};
 use datamodel::Source;
-use lru_cache::LruCache;
-use prisma_models::{ModelRef, RecordProjection};
-
-use crate::database::connection::CachedConnection;
+// use lru_cache::LruCache;
+use prisma_models::ModelRef;
+use prisma_value::PrismaValue;
 use sql_query_connector::{FromSource, PostgreSql, SqlError};
+use std::collections::HashSet;
+use std::sync::Mutex;
 
 //Todo Cache Structures
 //start with only three caches.
-// MODEL   Cache(model -> vec![id])
+// MODEL   HashSet
 // MODELFILTER   Cache(model, filter -> id)
 // FROMFIELD     Cache(from_field , from_id -> vec![target_id])
-pub struct Cache {}
+// idea: cache of deleted nodes
+pub struct ModelCache {
+    model: Mutex<HashSet<(ModelRef, PrismaValue)>>,
+}
+
+impl ModelCache {
+    pub fn get(&self, model: ModelRef, id: PrismaValue) -> bool {
+        let lock = self.model.lock();
+        lock.unwrap().contains(&(model, id))
+    }
+
+    pub fn insert(&self, model: ModelRef, id: PrismaValue) {
+        let lock = self.model.lock();
+        lock.unwrap().insert((model, id));
+    }
+}
 
 pub struct Cached {
-    cache: Cache,
+    cache: ModelCache,
     inner: PostgreSql,
 }
 
@@ -23,7 +40,9 @@ pub struct Cached {
 impl FromSource for Cached {
     async fn from_source(source: &dyn Source) -> connector_interface::Result<Self> {
         let psql = PostgreSql::from_source(source).await?;
-        let cache = Cache {};
+        let cache = ModelCache {
+            model: Mutex::new(HashSet::with_capacity(10)),
+        };
 
         Ok(Cached { cache, inner: psql })
     }
