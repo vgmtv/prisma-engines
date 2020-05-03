@@ -1,0 +1,125 @@
+PROBLEM:
+Tons of small requests to the db that are related to the structure of the data (ids and relations)
+These are often repeated and shared across different requests as they are the building blocks of our query graphs
+There are a bunch of roundtrips to the db added due to these.
+
+EXAMPLES:
+READS
+During reads we have to do separate requests to traverse relationfields.
+todo log an example of a nested read
+
+
+
+WRITES
+During writes we do a lot of checks on the prisma level that also result in seemingly superflous requests.
+await userRepository.update({
+      where: { id: me.id },
+      data: {
+        credentials: {
+          update: this.buildCredentials(tokenRes),
+        },
+      },
+    });
+SELECT 1
+BEGIN
+SELECT "public"."User"."id" FROM "public"."User" WHERE "public"."User"."id" = $1
+SELECT "public"."User"."id", "public"."User"."credentialsId" FROM "public"."User" WHERE "public"."User"."id" = $1 OFFSET $2
+SELECT "public"."Credentials"."id" FROM "public"."Credentials" WHERE (1=1 AND "public"."Credentials"."id" IN ($1)) OFFSET $2
+SELECT "public"."Credentials"."id" FROM "public"."Credentials" WHERE "public"."Credentials"."id" = $1
+UPDATE "public"."Credentials" SET "expires" = $1, "refreshToken" = $2, "accessToken" = $3, "updatedAt" = $4 WHERE "public"."Credentials"."id" IN ($5)
+SELECT "public"."User"."id", "public"."User"."country", "public"."User"."displayName", "public"."User"."email", "public"."User"."images", "public"."User"."product", "public"."User"."uri", "public"."User"."roles", "public"."User"."credentialsId", "public"."User"."createdAt", "public"."User"."updatedAt" FROM "public"."User" WHERE "public"."User"."id" = $1 LIMIT $2 OFFSET $3
+COMMIT
+
+SOLUTION:
+An intermediate layer between the query engine core and the actual connector. This uses the connector interface
+and can establish caching based on that limited interface. If only Prisma accesses the db and no triggers / cascades
+are used the interface should also have all information for cache invalidation.
+
+READ
+We'll only persist the ids. This will keep the cache small and is enough to hold the graph structure that we
+heavily use.
+
+    fn get_single_record<'a>(
+        &'a self,
+        model: &'a ModelRef,
+        filter: &'a Filter,
+        selected_fields: &'a ModelProjection,
+    ) -> crate::IO<'a, Option<SingleRecord>>
+
+MODEL         Cache(model -> vec[ids])
+MODELFILTER   Cache(model, filter -> id)
+
+    fn get_many_records<'a>(
+        &'a self,
+        model: &'a ModelRef,
+        query_arguments: QueryArguments,
+        selected_fields: &'a ModelProjection,
+    ) -> crate::IO<'a, ManyRecords>;
+
+MODELQUERYARGS  Cache(model, queryargs -> vec![id])
+
+    fn get_related_m2m_record_ids<'a>(
+        &'a self,
+        from_field: &'a RelationFieldRef,
+        from_record_ids: &'a [RecordProjection],
+    ) -> crate::IO<'a, Vec<(RecordProjection, RecordProjection)>>;
+
+FROMFIELD       Cache(from_field , from_id -> vec![target_id])
+
+last one is count, probably to rare to cache.
+
+WRITE
+    fn create_record<'a>(
+        &'a self,
+        model: &'a ModelRef,
+        args: WriteArgs
+    ) -> crate::IO<RecordProjection>;
+
+- no invalidation, add to MODELID
+
+    fn update_records<'a>(
+        &'a self,
+        model: &'a ModelRef,
+        record_filter: RecordFilter,
+        args: WriteArgs,
+    ) -> crate::IO<Vec<RecordProjection>>;
+
+- flush ids from MODELFILTER and MODELQUERYARGS
+
+    fn delete_records<'a>(
+        &'a self,
+        model: &'a ModelRef,
+        record_filter: RecordFilter
+    ) -> crate::IO<usize>;
+
+- flush ids from MODEl, MODELFILTER and MODELQUERYARGS, FROMFIELD need to check in key and value -.-
+
+    fn connect<'a>(
+        &'a self,
+        field: &'a RelationFieldRef,
+        parent_id: &'a RecordProjection,
+        child_ids: &'a [RecordProjection],
+    ) -> crate::IO<()>;
+
+- add to FROMFIELD
+
+    fn disconnect<'a>(
+        &'a self,
+        field: &'a RelationFieldRef,
+        parent_id: &'a RecordProjection,
+        child_ids: &'a [RecordProjection],
+    ) -> crate::IO<()>;
+
+- remove from FROMFIELD
+
+    fn execute_raw(
+        &self,
+        query: String,
+        parameters: Vec<PrismaValue>
+    ) -> crate::IO<serde_json::Value>;
+
+- all bets are off, if we split this into read / write we could extend the guarantees
+
+
+TESTING
+-we currently use the query engine in CLI mode, that means the cache won't warm up 

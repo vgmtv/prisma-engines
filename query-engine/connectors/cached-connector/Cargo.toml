@@ -1,0 +1,57 @@
+[package]
+name = "cached-connector"
+version = "0.1.0"
+authors = []
+edition = "2018"
+
+[dependencies]
+itertools = "0.8"
+serde_json = "1.0"
+uuid = "0.8"
+failure = "0.1"
+rand = "0.7"
+async-trait = "0.1"
+futures = "0.3"
+rust_decimal = "=1.1.0"
+tokio = "=0.2.13"
+
+[dependencies.quaint]
+git = "https://github.com/prisma/quaint"
+features = ["full", "tracing-log"]
+
+[dependencies.connector-interface]
+path = "../query-connector"
+package = "query-connector"
+
+[dependencies.sql-query-connector]
+path = "../sql-query-connector"
+package = "sql-query-connector"
+
+[dependencies.prisma-models]
+path = "../../../libs/prisma-models"
+features = ["sql-ext"]
+
+[dependencies.prisma-value]
+path = "../../../libs/prisma-value"
+features = ["sql-ext"]
+
+[dependencies.chrono]
+version = "0.4"
+features = ["serde"]
+
+[dependencies.lru-cache]
+version = "0.1.2"
+
+[dependencies.datamodel]
+path = "../../../libs/datamodel/core"
+
+[dependencies.serde]
+version = "1.0"
+features = ["derive"]
+
+[dependencies.cuid]
+git = "https://github.com/prisma/cuid-rust"
+
+[dependencies.user-facing-errors]
+path = "../../../libs/user-facing-errors"
+features = ["sql"]

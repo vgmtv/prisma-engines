@@ -15,8 +15,8 @@ pub trait Connection: ReadOperations + WriteOperations + Send + Sync {
 }
 
 pub trait Transaction<'a>: ReadOperations + WriteOperations + Send + Sync {
-    fn commit<'b>(&'b self) -> crate::IO<'b, ()>;
-    fn rollback<'b>(&'b self) -> crate::IO<'b, ()>;
+    fn commit(&self) -> crate::IO<()>;
+    fn rollback(&self) -> crate::IO<()>;
 }
 
 pub enum ConnectionLike<'conn, 'tx>
@@ -156,5 +156,5 @@ pub trait WriteOperations {
 
     /// Execute the raw query in the database as-is. The `parameters` are
     /// parameterized values for databases that support prepared statements.
-    fn execute_raw<'a>(&'a self, query: String, parameters: Vec<PrismaValue>) -> crate::IO<serde_json::Value>;
+    fn execute_raw(&self, query: String, parameters: Vec<PrismaValue>) -> crate::IO<serde_json::Value>;
 }

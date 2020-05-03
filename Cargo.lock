@@ -186,6 +186,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "130aac562c0dd69c56b3b1cc8ffd2e17be31d0b6c25b61c96b76231aa23e39e1"
 
 [[package]]
+name = "cached-connector"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "cuid",
+ "datamodel",
+ "failure",
+ "futures 0.3.4",
+ "itertools",
+ "lru-cache",
+ "prisma-models",
+ "prisma-value",
+ "quaint",
+ "query-connector",
+ "rand",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "sql-query-connector",
+ "tokio",
+ "user-facing-errors",
+ "uuid",
+]
+
+[[package]]
 name = "cc"
 version = "1.0.52"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2072,6 +2098,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "base64 0.10.1",
+ "cached-connector",
  "datamodel",
  "failure",
  "futures 0.3.4",

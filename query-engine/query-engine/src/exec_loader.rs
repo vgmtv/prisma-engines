@@ -8,6 +8,7 @@ use query_core::executor::{InterpretingExecutor, QueryExecutor};
 use std::{collections::HashMap, path::PathBuf};
 use url::Url;
 
+use cached_connector::Cached;
 #[cfg(feature = "sql")]
 use sql_connector::*;
 
@@ -23,7 +24,7 @@ pub async fn load(
         MYSQL_SOURCE_NAME => mysql(source).await,
 
         #[cfg(feature = "sql")]
-        POSTGRES_SOURCE_NAME => postgres(source, force_transactions).await,
+        POSTGRES_SOURCE_NAME => cached(source, force_transactions).await,
 
         x => Err(PrismaError::ConfigurationError(format!(
             "Unsupported connector type: {}",
@@ -65,6 +66,26 @@ async fn postgres(
 
     trace!("Loaded Postgres connector.");
     Ok((db_name, sql_executor("postgres", psql, force_transactions)))
+}
+
+async fn cached(
+    source: &(dyn Source + Send + Sync),
+    force_transactions: bool,
+) -> PrismaResult<(String, Box<dyn QueryExecutor + Send + Sync + 'static>)> {
+    trace!("Loading Cached Postgres connector...");
+
+    let url = Url::parse(&source.url().value)?;
+    let params: HashMap<String, String> = url.query_pairs().into_owned().collect();
+
+    let db_name = params
+        .get("schema")
+        .map(ToString::to_string)
+        .unwrap_or_else(|| String::from("public"));
+
+    let cached = Cached::from_source(source).await?;
+
+    trace!("Loaded Cached Postgres connector.");
+    Ok((db_name, sql_executor("postgres", cached, force_transactions)))
 }
 
 #[cfg(feature = "sql")]

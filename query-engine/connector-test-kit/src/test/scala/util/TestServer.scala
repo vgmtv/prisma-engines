@@ -77,7 +77,7 @@ case class TestServer() extends PlayJsonExtensions with LogSupport {
 
   def queryBinaryCLI(request: JsValue, project: Project, legacy: Boolean = true, batchSize: Int = 5000) = {
     val encoded_query  = UTF8Base64.encode(Json.stringify(request))
-    val binaryLogLevel = "RUST_LOG" -> s"query_engine=$logLevel,quaint=$logLevel,query_core=$logLevel,query_connector=$logLevel,sql_query_connector=$logLevel,prisma_models=$logLevel,sql_introspection_connector=$logLevel"
+    val binaryLogLevel = "RUST_LOG" -> s"migration_engine=INFO,query_engine=$logLevel,quaint=$logLevel,query_core=$logLevel,query_connector=$logLevel,sql_query_connector=$logLevel,prisma_models=$logLevel,sql_introspection_connector=$logLevel"
 
     val response = (project.isPgBouncer, legacy) match {
       case (true, true) =>
@@ -146,7 +146,6 @@ case class TestServer() extends PlayJsonExtensions with LogSupport {
     }
 
     val lines = response.linesIterator.toVector
-    debug(lines.mkString("\n"))
 
     val responseMarker = "Response: " // due to race conditions the response can not always be found in the last line
     val responseLine   = lines.find(_.startsWith(responseMarker)).get.stripPrefix(responseMarker).stripSuffix("\n")

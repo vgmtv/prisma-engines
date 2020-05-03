@@ -1,18 +1,13 @@
+mod cached;
 mod connection;
-mod mysql;
-mod postgresql;
-mod sqlite;
 mod transaction;
 
-pub mod operations;
+pub(crate) mod operations;
 
 use async_trait::async_trait;
-use connector_interface::{error::ConnectorError, Connector};
+pub use cached::*;
+use connector_interface::{error::*, Connector};
 use datamodel::Source;
-
-pub use mysql::*;
-pub use postgresql::*;
-pub use sqlite::*;
 
 #[async_trait]
 pub trait FromSource {
@@ -27,6 +22,6 @@ async fn catch<O>(
 ) -> Result<O, ConnectorError> {
     match fut.await {
         Ok(o) => Ok(o),
-        Err(err) => Err(err.into_connector_error(connection_info)),
+        Err(err) => Err(ConnectorError::from_kind(ErrorKind::ColumnDoesNotExist)),
     }
 }

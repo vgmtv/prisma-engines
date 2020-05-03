@@ -10,8 +10,8 @@ use quaint::{pooled::Quaint, prelude::ConnectionInfo};
 use std::time::Duration;
 
 pub struct PostgreSql {
-    pool: Quaint,
-    connection_info: ConnectionInfo,
+    pub pool: Quaint,
+    pub connection_info: ConnectionInfo,
 }
 
 #[async_trait]
