@@ -15,6 +15,7 @@ use std::sync::Mutex;
 // MODELFILTER   Cache(model, filter -> id)
 // FROMFIELD     Cache(from_field , from_id -> vec![target_id])
 // idea: cache of deleted nodes
+// problem: rolled back transactions that alter the cache
 pub struct ModelCache {
     model: Mutex<HashSet<(ModelRef, PrismaValue)>>,
 }

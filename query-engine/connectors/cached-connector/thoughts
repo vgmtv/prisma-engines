@@ -6,7 +6,6 @@ There are a bunch of roundtrips to the db added due to these.
 EXAMPLES:
 READS
 During reads we have to do separate requests to traverse relationfields.
-todo log an example of a nested read
 
 
 

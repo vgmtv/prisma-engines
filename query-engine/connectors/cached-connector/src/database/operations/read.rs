@@ -11,12 +11,13 @@ pub async fn get_single_record(
     filter: &Filter,
     selected_fields: &ModelProjection,
 ) -> crate::Result<Option<SingleRecord>> {
-    //filter is by id?
-    //modelprojection was only id
-
-    let fields = model.fields();
     let id_fields = model.fields().id().unwrap();
     let id_field = id_fields.first().unwrap();
+
+    let filter = match filter {
+        Filter::And(contents) if contents.len() == 1 => contents.first().unwrap(),
+        x => x,
+    };
 
     if let Filter::Scalar(ScalarFilter {
         projection: ScalarProjection::Single(id_field_projection),
@@ -42,6 +43,7 @@ pub async fn get_single_record(
         }
     }
 
+    println!("CACHE MISS");
     let return_value = read::get_single_record(conn, model, filter, selected_fields).await;
 
     if let Ok(Some(SingleRecord {
@@ -53,8 +55,6 @@ pub async fn get_single_record(
             cache.insert(model.clone(), values[pos].clone())
         }
     }
-
-    //fill cache
 
     return_value
 
