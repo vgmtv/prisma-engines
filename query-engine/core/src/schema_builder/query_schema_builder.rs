@@ -255,8 +255,8 @@ impl<'a> QuerySchemaBuilder<'a> {
     /// Builds an "aggregate" query field (e.g. "aggregateUser") for given model.
     fn aggregation_field(&self, model: ModelRef) -> Field {
         let field_name = self.pluralize_internal(
-            format!("aggregate{}", model.name.clone()), // Has no legacy counterpart.
-            format!("aggregate{}", model.name.clone()),
+            format!("aggregate{}", capitalize(&model.name)), // Has no legacy counterpart.
+            format!("aggregate{}", capitalize(&model.name)),
         );
 
         field(
