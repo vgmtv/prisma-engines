@@ -1,6 +1,7 @@
 use super::RecordProjection;
 use crate::{
-    dml::FieldArity, DomainError, Field, ModelRef, PrismaValue, PrismaValueExtensions, ScalarFieldRef, TypeIdentifier,
+    dml::FieldArity, DomainError, Field, ModelRef, PrismaValue, PrismaValueExtensions, ScalarFieldRef, TypeHint,
+    TypeIdentifier,
 };
 use itertools::Itertools;
 
@@ -116,7 +117,7 @@ impl ModelProjection {
     /// Creates a record projection of the model projection containing only null values.
     pub fn empty_record_projection(&self) -> RecordProjection {
         self.scalar_fields()
-            .map(|f| (f.clone(), PrismaValue::Null))
+            .map(|f| (f.clone(), PrismaValue::Null(TypeHint::Unknown)))
             .collect::<Vec<_>>()
             .into()
     }

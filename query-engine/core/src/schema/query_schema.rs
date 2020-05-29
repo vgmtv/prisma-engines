@@ -1,7 +1,7 @@
 use super::*;
 use crate::{ParsedField, QueryGraph, QueryGraphBuilderResult};
 use once_cell::sync::OnceCell;
-use prisma_models::{dml, InternalDataModelRef, ModelRef};
+use prisma_models::{dml, InternalDataModelRef, ModelRef, TypeHint};
 use std::{
     borrow::Borrow,
     boxed::Box,
@@ -444,6 +444,22 @@ pub enum ScalarType {
     Json,
     JsonList,
     UUID,
+}
+
+impl From<ScalarType> for TypeHint {
+    fn from(t: ScalarType) -> Self {
+        match t {
+            ScalarType::String => TypeHint::String,
+            ScalarType::Int => TypeHint::Int,
+            ScalarType::Float => TypeHint::Float,
+            ScalarType::Boolean => TypeHint::Boolean,
+            ScalarType::Enum(_) => TypeHint::Enum,
+            ScalarType::DateTime => TypeHint::DateTime,
+            ScalarType::Json => TypeHint::Json,
+            ScalarType::JsonList => TypeHint::Json,
+            ScalarType::UUID => TypeHint::UUID,
+        }
+    }
 }
 
 impl From<EnumType> for OutputType {

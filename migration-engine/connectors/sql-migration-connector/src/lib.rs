@@ -84,6 +84,7 @@ impl SqlMigrationConnector {
                 &conn,
             ))),
             SqlFamily::Sqlite => Arc::new(sql_schema_describer::sqlite::SqlSchemaDescriber::new(Arc::clone(&conn))),
+            SqlFamily::Mssql => todo!("Greetings from Redmond"),
         };
 
         Ok(Self {
@@ -103,6 +104,7 @@ impl SqlMigrationConnector {
                 Ok(())
             }
             SqlFamily::Sqlite => Ok(()),
+            SqlFamily::Mssql => todo!("Greetings from Redmond"),
             SqlFamily::Mysql => {
                 let query = format!("CREATE DATABASE `{}`", db_name);
                 self.database.query_raw(&query, &[]).await?;
@@ -140,6 +142,7 @@ impl SqlMigrationConnector {
 
                 self.database.query_raw(&schema_sql, &[]).await?;
             }
+            ConnectionInfo::Mssql(_) => todo!("Greetings from Redmond"),
         }
 
         Ok(())
@@ -178,6 +181,7 @@ impl SqlMigrationConnector {
                     debug!("{}", sql_str);
                     self.conn().query_raw(&sql_str, &[]).await?;
                 }
+                ConnectionInfo::Mssql(_) => todo!("Greetings from Redmond"),
             };
 
             Ok(())

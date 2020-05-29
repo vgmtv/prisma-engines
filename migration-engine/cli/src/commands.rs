@@ -98,6 +98,7 @@ async fn create_conn(datasource: &str, admin_mode: bool) -> CoreResult<(String, 
             let inner = SqlMigrationConnector::new(url.as_str()).await?;
             Ok((db_name, Box::new(inner)))
         }
+        Some(SqlFamily::Mssql) => todo!("Greetings from Redmond"),
         None => unimplemented!("Connector {} is not supported yet", url.scheme()),
     }
 }

@@ -164,6 +164,7 @@ impl VersionChecker {
                 Version::Prisma11
             }
             SqlFamily::Postgres => Version::NonPrisma,
+            SqlFamily::Mssql => todo!("Greetings from Redmond"),
         }
     }
 }

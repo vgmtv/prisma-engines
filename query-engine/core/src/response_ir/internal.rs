@@ -102,7 +102,7 @@ fn serialize_record_selection(
                             if !opt {
                                 // Check that all items are non-null
                                 if items.iter().any(|item| match item {
-                                    Item::Value(PrismaValue::Null) => true,
+                                    Item::Value(PrismaValue::Null(_)) => true,
                                     _ => false,
                                 }) {
                                     return Err(CoreError::SerializationError(format!(
@@ -140,7 +140,11 @@ fn serialize_record_selection(
                                     )))
                                 }
                             } else if items.is_empty() && opt {
-                                Ok((parent, Item::Ref(ItemRef::new(Item::Value(PrismaValue::Null)))))
+                                // TODO: Dom please check if this is correct
+                                Ok((
+                                    parent,
+                                    Item::Ref(ItemRef::new(Item::Value(PrismaValue::Null(TypeHint::Unknown)))),
+                                ))
                             } else if items.is_empty() && opt {
                                 Err(CoreError::SerializationError(format!(
                                     "Required field '{}' returned a null record",
@@ -257,7 +261,8 @@ fn write_nested_items(
                         if inner.is_list() {
                             Item::list(Vec::new())
                         } else {
-                            Item::Value(PrismaValue::Null)
+                            // TODO: Dom please check if this is correct
+                            Item::Value(PrismaValue::Null(TypeHint::Unknown))
                         }
                     }
                     _ => panic!(
@@ -299,7 +304,7 @@ fn process_nested_results(
 
 fn serialize_scalar(value: PrismaValue, typ: &OutputTypeRef) -> crate::Result<Item> {
     match (&value, typ.as_ref()) {
-        (PrismaValue::Null, OutputType::Opt(_)) => Ok(Item::Value(PrismaValue::Null)),
+        (PrismaValue::Null(_), OutputType::Opt(_)) => Ok(Item::Value(PrismaValue::Null(TypeHint::Unknown))),
         (_, OutputType::Opt(inner)) => serialize_scalar(value, inner),
         (_, OutputType::Enum(et)) => match et.borrow() {
             EnumType::Internal(ref i) => convert_enum(value, i),

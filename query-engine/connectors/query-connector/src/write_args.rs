@@ -1,5 +1,5 @@
 use chrono::Utc;
-use prisma_models::{ModelProjection, ModelRef, PrismaValue, RecordProjection};
+use prisma_models::{ModelProjection, ModelRef, PrismaValue, RecordProjection, TypeHint};
 use std::collections::{hash_map::Keys, HashMap};
 
 /// WriteArgs represent data to be written to an underlying data source.
@@ -94,7 +94,8 @@ impl WriteArgs {
             .map(|field| {
                 let val = match self.get_field_value(field.db_name()) {
                     Some(val) => val.clone(),
-                    None => PrismaValue::Null,
+                    // TODO: Map the expected type somehow.
+                    None => PrismaValue::Null(TypeHint::Unknown),
                 };
 
                 (field.clone(), val.clone())
