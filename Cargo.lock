@@ -2567,6 +2567,7 @@ dependencies = [
  "barrel",
  "chrono",
  "datamodel",
+ "futures 0.3.5",
  "migration-connector",
  "once_cell",
  "prisma-models",
