@@ -28,7 +28,6 @@ use sql_database_migration_inferrer::*;
 use sql_database_step_applier::*;
 use sql_destructive_changes_checker::*;
 use sql_migration_persistence::*;
-use sql_schema_describer::SqlSchemaDescriberBackend;
 use std::{fs, path::PathBuf, sync::Arc, time::Duration};
 use tracing::debug;
 use user_facing_errors::migration_engine::DatabaseMigrationFormatChanged;
@@ -36,10 +35,8 @@ use user_facing_errors::migration_engine::DatabaseMigrationFormatChanged;
 const CONNECTION_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub struct SqlMigrationConnector {
-    pub schema_name: String,
     pub database: Arc<dyn Queryable + Send + Sync + 'static>,
     pub database_info: DatabaseInfo,
-    pub database_describer: Box<dyn SqlSchemaDescriberBackend + Send + Sync + 'static>,
 }
 
 impl SqlMigrationConnector {
@@ -75,22 +72,11 @@ impl SqlMigrationConnector {
             .await
             .map_err(|sql_error| sql_error.into_connector_error(&connection_info))?;
 
-        let schema_name = connection.connection_info().schema_name().to_owned();
         let conn = Arc::new(connection) as Arc<dyn Queryable + Send + Sync>;
-
-        let describer: Box<dyn SqlSchemaDescriberBackend + Send + Sync + 'static> = match database_info.sql_family() {
-            SqlFamily::Mysql => Box::new(sql_schema_describer::mysql::SqlSchemaDescriber::new(Arc::clone(&conn))),
-            SqlFamily::Postgres => Box::new(sql_schema_describer::postgres::SqlSchemaDescriber::new(Arc::clone(
-                &conn,
-            ))),
-            SqlFamily::Sqlite => Box::new(sql_schema_describer::sqlite::SqlSchemaDescriber::new(Arc::clone(&conn))),
-        };
 
         Ok(Self {
             database_info,
-            schema_name,
             database: conn,
-            database_describer: describer,
         })
     }
 
@@ -124,7 +110,7 @@ impl SqlMigrationConnector {
                 }
             }
             ConnectionInfo::Postgres(_) => {
-                let schema_sql = format!("CREATE SCHEMA IF NOT EXISTS \"{}\";", &self.schema_name);
+                let schema_sql = format!("CREATE SCHEMA IF NOT EXISTS \"{}\";", &self.schema_name());
 
                 debug!("{}", schema_sql);
 
@@ -133,7 +119,7 @@ impl SqlMigrationConnector {
             ConnectionInfo::Mysql(_) => {
                 let schema_sql = format!(
                     "CREATE SCHEMA IF NOT EXISTS `{}` DEFAULT CHARACTER SET latin1;",
-                    &self.schema_name
+                    &self.schema_name()
                 );
 
                 debug!("{}", schema_sql);
