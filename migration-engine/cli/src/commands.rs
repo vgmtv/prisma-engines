@@ -68,14 +68,14 @@ enum CliCommand {
     CanConnectToDatabase,
 }
 
-async fn create_conn(datasource: &str, admin_mode: bool) -> CoreResult<(String, Box<SqlMigrationConnector>)> {
+async fn create_conn(datasource: &str, admin_mode: bool) -> CoreResult<(String, SqlMigrationConnector)> {
     let mut url = Url::parse(datasource).expect("Invalid url in the datasource");
     let sql_family = SqlFamily::from_scheme(url.scheme());
 
     match sql_family {
         Some(SqlFamily::Sqlite) => {
             let connector = SqlMigrationConnector::new(datasource).await?;
-            Ok((datasource.to_owned(), Box::new(connector)))
+            Ok((datasource.to_owned(), connector))
         }
         Some(SqlFamily::Postgres) => {
             let db_name = fetch_db_name(&url, "postgres");
@@ -86,7 +86,7 @@ async fn create_conn(datasource: &str, admin_mode: bool) -> CoreResult<(String, 
                 SqlMigrationConnector::new(url.as_str()).await?
             };
 
-            Ok((db_name, Box::new(connector)))
+            Ok((db_name, connector))
         }
         Some(SqlFamily::Mysql) => {
             let db_name = fetch_db_name(&url, "mysql");
@@ -96,7 +96,7 @@ async fn create_conn(datasource: &str, admin_mode: bool) -> CoreResult<(String, 
             }
 
             let inner = SqlMigrationConnector::new(url.as_str()).await?;
-            Ok((db_name, Box::new(inner)))
+            Ok((db_name, inner))
         }
         None => unimplemented!("Connector {} is not supported yet", url.scheme()),
     }
@@ -136,7 +136,9 @@ async fn create_database(datasource: &str) -> Result<String, CliError> {
         }
         Some(_) => {
             let (db_name, conn) = create_conn(datasource, true).await?;
+
             conn.create_database(&db_name).await?;
+
             Ok(format!("Database '{}' created successfully.", db_name))
         }
         None => Err(CliError::Other(anyhow::anyhow!(

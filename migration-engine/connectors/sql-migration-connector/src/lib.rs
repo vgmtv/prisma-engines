@@ -61,7 +61,7 @@ impl SqlMigrationConnector {
                 .map_err(SqlError::from)
                 .map_err(|err| err.into_connector_error(&connection.connection_info()))?;
 
-            Ok(connection)
+            Ok::<_, ConnectorError>(connection)
         };
 
         let connection = tokio::time::timeout(CONNECTION_TIMEOUT, connection_fut)
@@ -74,10 +74,13 @@ impl SqlMigrationConnector {
             .await
             .map_err(|sql_error| sql_error.into_connector_error(&connection_info))?;
 
+        let flavour = flavour::from_database_info(&database_info);
+        flavour.check_database_info(&database_info)?;
+
         let conn = Arc::new(connection) as Arc<dyn Queryable + Send + Sync>;
 
         Ok(Self {
-            flavour: flavour::from_database_info(&database_info),
+            flavour,
             database_info,
             database: conn,
         })
@@ -86,8 +89,8 @@ impl SqlMigrationConnector {
     async fn drop_database(&self) -> ConnectorResult<()> {
         use quaint::ast::Value;
 
-        catch(self.connection_info(), async {
-            match &self.connection_info() {
+        catch(self.database_info.connection_info(), async {
+            match &self.database_info.connection_info() {
                 ConnectionInfo::Postgres(_) => {
                     let sql_str = format!(r#"DROP SCHEMA "{}" CASCADE;"#, self.schema_name());
                     debug!("{}", sql_str);
@@ -127,12 +130,12 @@ impl MigrationConnector for SqlMigrationConnector {
     type DatabaseMigration = SqlMigration;
 
     fn connector_type(&self) -> &'static str {
-        self.connection_info().sql_family().as_str()
+        self.database_info.connection_info().sql_family().as_str()
     }
 
     async fn create_database(&self, db_name: &str) -> ConnectorResult<()> {
         catch(
-            self.connection_info(),
+            self.database_info.connection_info(),
             self.flavour.create_database(db_name, self.database.as_ref()),
         )
         .await
@@ -140,8 +143,8 @@ impl MigrationConnector for SqlMigrationConnector {
 
     async fn initialize(&self) -> ConnectorResult<()> {
         catch(
-            self.connection_info(),
-            self.flavour.initialize(self.database.as_ref(), self.database_info()),
+            self.database_info.connection_info(),
+            self.flavour.initialize(self.database.as_ref(), &self.database_info),
         )
         .await?;
 
