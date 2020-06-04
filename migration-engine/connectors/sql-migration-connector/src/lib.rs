@@ -30,6 +30,7 @@ use sql_database_migration_inferrer::*;
 use sql_database_step_applier::*;
 use sql_destructive_changes_checker::*;
 use sql_migration_persistence::*;
+use sql_schema_describer::SqlSchema;
 use std::{sync::Arc, time::Duration};
 use tracing::debug;
 use user_facing_errors::migration_engine::DatabaseMigrationFormatChanged;
@@ -122,6 +123,13 @@ impl SqlMigrationConnector {
         .await?;
 
         Ok(())
+    }
+
+    async fn describe(&self) -> SqlResult<SqlSchema> {
+        let conn = self.connector().database.clone();
+        let schema_name = self.schema_name();
+
+        self.flavour.describe_schema(schema_name, conn).await
     }
 }
 
