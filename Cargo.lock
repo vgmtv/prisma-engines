@@ -3295,6 +3295,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "vb-query"
+version = "0.1.0"
+dependencies = [
+ "query-engine",
+]
+
+[[package]]
 name = "vcpkg"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
